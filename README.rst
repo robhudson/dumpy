@@ -6,41 +6,53 @@ Dumpy is a Python database backup script that uses configuration files to
 specify databases to backup and options.  Backup scripts are classes which
 define a `backup` method.
 
+Each `BackupBase` subclass returns a `NamedTemporaryFile` object.  It's up to
+any post processors to use this object in any way (e.g. copy it to another
+location on the file system).
+
+Post processors can be chained and all take the form::
+
+	MyPostProcessor().process(file)
+
+If the post process doesn't alter the file passed in it should return it
+unchanged.
+
 Example configuration file
 ==========================
 
 The following is an idea of what the configuration file, located at
 `~/.dumpy.conf` might look like.  This is very likely to change::
 
-	[databases]
-	mysql = db1, db2
-	postgresql = db3
-	
-	[mysql db1]
+	[database db1]
+	type = mysql
 	user = db1
-	pass = db1
-	s3_copy = true
+	password = db1
+	postprocessing = TimestampRename, Bzip, SystemFileCopy, S3Copy
 	
-	[mysql db2]
+	[database db2]
+	type = postgresql
 	user = db2
-	pass = db2
-	
-	[postgresql db3]
-	user = db3
-	pass = db3
+	password = db2
+	postprocessing = TimestampRename, Bzip, SystemFileCopy
 	
 	[mysqldump options]
 	path = /opt/local/lib/mysql5/bin/mysqldump
 	flags = -Q --opt --compact
-	bzip = true
 	
 	[pgdump options]
 	path = /opt/local/lib/postgresql83/bin/pg_dump
 	
-	[aws_s3]
+	[TimestampRename options]
+	format = %Y%m%d
+	
+	[Bzip options]
+	path = /usr/bin/bzip2
+	
+	[S3Copy options]
 	key = key
 	secret = secret
 	bucket = bucket
+
 
 Status
 ======
