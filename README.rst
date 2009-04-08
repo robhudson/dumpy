@@ -41,7 +41,7 @@ The following is an idea of what the configuration file, located at
 	path = /opt/local/lib/mysql5/bin/mysqldump
 	flags = -Q --opt --compact
 	
-	[pgdump options]
+	[pg_dump options]
 	path = /opt/local/lib/postgresql83/bin/pg_dump
 	
 	[TimestampRename options]
