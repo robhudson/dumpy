@@ -4,8 +4,14 @@ import datetime
 import shutil
 import tempfile
 
-from boto.s3.key import Key
-from boto.s3.connection import S3Connection
+try:
+    import boto
+except ImportError:
+    boto = None
+else:
+    from boto.s3.key import Key
+    from boto.s3.connection import S3Connection
+
 
 class MySQLDumpError(Exception):
     pass
@@ -262,6 +268,9 @@ class S3Copy(PostProcessBase):
         self.bucket = self._get_option_value(self.config, 'S3Copy options', 'bucket')
 
     def process(self, file):
+        if boto is None:
+            raise Exception("You must have boto installed before using S3 support.")
+        
         self.parse_config()
 
         conn = S3Connection(self.access_key, self.secret_key)
