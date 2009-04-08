@@ -6,8 +6,14 @@ import tempfile
 from optparse import OptionParser
 import logging
 
-from boto.s3.key import Key
-from boto.s3.connection import S3Connection
+try:
+    import boto
+except ImportError:
+    boto = None
+else:
+    from boto.s3.key import Key
+    from boto.s3.connection import S3Connection
+
 
 # Process options:
 # dumpy --database [database name]
@@ -238,15 +244,17 @@ class PostProcess(PostProcessBase):
     def parse_config(self):
         super(PostProcess, self).parse_config()
 
-        self.processors = self._get_option_value(self.config, 'database %s' % (self.db), 'postprocessing')
+        self.processors = self._get_option_value(self.config, 'database %s' % (self.db,), 'postprocessing')
 
     def process(self, file):
         self.parse_config()
-        processors = [p.strip() for p in self.processors.split(',')]
+        
+        if self.processors:
+            processors = [p.strip() for p in self.processors.split(',')]
 
-        for processor in processors:
-            logger.info('%s - ' % (self.db,) + processor) #FIXME
-            file = globals()[processor](self.db).process(file)
+            for processor in processors:
+                logger.info('%s - ' % (self.db,) + processor)
+                file = globals()[processor](self.db).process(file)
 
 class Bzip(PostProcessBase):
     """
@@ -342,6 +350,9 @@ class S3Copy(PostProcessBase):
         self.bucket = self._get_option_value(self.config, 'S3Copy options', 'bucket')
 
     def process(self, file):
+        if boto is None:
+            raise Exception("You must have boto installed before using S3 support.")
+        
         self.parse_config()
 
         conn = S3Connection(self.access_key, self.secret_key)
