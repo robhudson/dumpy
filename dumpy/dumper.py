@@ -1,5 +1,7 @@
 import os
 import ConfigParser
+import datetime
+import shutil
 import tempfile
 
 from boto.s3.key import Key
@@ -108,13 +110,14 @@ class DatabaseBackup(BackupBase):
 
 class MysqlBackup(BackupBase):
 
-    def __init__(self, database):
-        self.database = database
+    def __init__(self, db):
+        self.db = db
 
     def parse_config(self):
         super(MysqlBackup, self).parse_config()
 
-        section = 'database %s' % (self.database)
+        section = 'database %s' % (self.db)
+        self.name = self._get_option_value(self.config, section, 'name')
         self.user = self._get_option_value(self.config, section, 'user')
         self.password = self._get_option_value(self.config, section, 'password')
         self.host = self._get_option_value(self.config, section, 'host')
@@ -142,7 +145,7 @@ class MysqlBackup(BackupBase):
         cmd = '%(binary)s %(flags)s %(database)s > %(file)s' % ({
             'binary': self.binary,
             'flags': self.get_flags(),
-            'database': self.database,
+            'database': self.name,
             'file': tmp_file.name,
         })
         print cmd #FIXME
@@ -155,49 +158,102 @@ class PostProcess(PostProcessBase):
     This classes loads the specified database `postprocessing` config option
     and passes off handling to each post processor.
     """
-    def __init__(self, database):
-        self.database = database
+    def __init__(self, db):
+        self.db = db
 
     def parse_config(self):
         super(PostProcess, self).parse_config()
 
-        self.processors = self._get_option_value(self.config, 'database %s' % (self.database), 'postprocessing')
+        self.processors = self._get_option_value(self.config, 'database %s' % (self.db), 'postprocessing')
 
     def process(self, file):
         self.parse_config()
         processors = [p.strip() for p in self.processors.split(',')]
 
         for processor in processors:
-            print processor
+            print processor #FIXME
+            file = globals()[processor](self.db).process(file)
 
 class Bzip(PostProcessBase):
     """
     A post processor that bzips the given file and returns it.
     """
-    def __init__(self, file):
-        self.file = file
+    def __init__(self, db):
+        self.db = db
 
     def parse_config(self):
         super(Bzip, self).parse_config()
-
         self.path = self._get_option_value(self.config, 'Bzip options', 'path')
 
-    def process(self):
-        cmd = "%(path)s %(file)s"
-        file = open('%s.bz2' % (self.file.name))
-        self.file.close()
-        return file
+    def process(self, file):
+
+        self.parse_config()
+
+        cmd = "%(path)s -f '%(file)s'" % ({'path': self.path, 'file': file.name})
+        print cmd #FIXME
+        os.system(cmd)
+        new_file = open('%s.bz2' % (file.name))
+        file.close()
+        return new_file
+
+class TimestampRename(PostProcessBase):
+    """
+    A post procesor that renames the file using timestamp format.
+    """
+    def __init__(self, db):
+        self.db = db
+
+    def parse_config(self):
+        super(TimestampRename, self).parse_config()
+        self.format = self._get_option_value(self.config, 'TimestampRename options', 'format')
+
+    def process(self, file):
+
+        self.parse_config()
+
+        dir = os.path.dirname(file.name)
+        base, ext = os.path.splitext(os.path.basename(file.name))
+        new_file_name = '%s/%s%s' % (dir, datetime.datetime.now().strftime(self.format), ext)
+
+        shutil.copy(file.name, new_file_name)
+        new_file = open(new_file_name)
+        file.close()
+        return new_file
 
 class SystemFileCopy(PostProcessBase):
     """
     A post processor that copies the file to a specified path.
     """
-    pass
+    def __init__(self, db):
+        self.db = db
+
+    def parse_config(self):
+        super(SystemFileCopy, self).parse_config()
+        self.dir = self._get_option_value(self.config, 'SystemFileCopy options', 'directory')
+        override = self._get_option_value(self.config, 'database %s' % (self.db), 'SystemFileCopy directory')
+        if override:
+            self.dir = override
+
+    def process(self, file):
+        self.parse_config()
+
+        dir = os.path.dirname(file.name)
+        base, ext = os.path.splitext(os.path.basename(file.name))
+        if self.dir.endswith('/'):
+            self.dir = self.dir[0:-1]
+        new_file_name = '%s/%s%s' % (self.dir, base, ext)
+
+        shutil.copy(file.name, new_file_name)
+        new_file = open(new_file_name)
+        file.close()
+        return new_file
 
 class S3Copy(PostProcessBase):
     """
     A post processor that copies the given file to S3.
     """
+    def __init__(self, db):
+        self.db = db
 
     def s3_connect(self):
         try:
@@ -212,7 +268,7 @@ class S3Copy(PostProcessBase):
             conn = self.s3_connect()
         self.bucket = conn.create_bucket(bucketname)
         return
-   
+
     def open_key(self, keyname):
         if not self.is_connected:
             conn = self.s3_connect()
@@ -221,10 +277,10 @@ class S3Copy(PostProcessBase):
         self.keyname = keyname
         return k
 
-    def backup(self):
+    def process(self, file):
         self.open_bucket(self.bucket)
-        k = self.open_key(self.filename)
-        k.set_contents_from_filename(self.filename)
+        k = self.open_key(self.file.name)
+        k.set_contents_from_filename(self.file.name)
         return
 
 if __name__ == '__main__':
@@ -233,8 +289,8 @@ if __name__ == '__main__':
     # dumpy --database [database name]
 
     # Call DatabaseBackup first
-    file = DatabaseBackup('test_db').backup()
+    file = DatabaseBackup('db1').backup()
 
     # Then call post processors, in the given order
-    PostProcess('test_db').process(file)
+    PostProcess('db1').process(file)
 

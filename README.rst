@@ -25,12 +25,14 @@ The following is an idea of what the configuration file, located at
 
 	[database db1]
 	type = mysql
+	name = dbname1
 	user = db1
 	password = db1
 	postprocessing = TimestampRename, Bzip, SystemFileCopy, S3Copy
 	
 	[database db2]
 	type = postgresql
+	name = dbname2
 	user = db2
 	password = db2
 	postprocessing = TimestampRename, Bzip, SystemFileCopy
