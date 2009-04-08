@@ -51,8 +51,8 @@ The following is an idea of what the configuration file, located at
 	path = /usr/bin/bzip2
 	
 	[S3Copy options]
-	key = key
-	secret = secret
+	access_key = access_key
+	secret_key = secret_key
 	bucket = bucket
 
 

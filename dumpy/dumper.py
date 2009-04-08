@@ -255,33 +255,22 @@ class S3Copy(PostProcessBase):
     def __init__(self, db):
         self.db = db
 
-    def s3_connect(self):
-        try:
-            conn = S3Connection(self.access_key, self.secret_key)
-            self.is_connected = True
-            return conn
-        except:
-            self.is_connected = False
-
-    def open_bucket(self, bucketname):
-        if not self.is_connected:
-            conn = self.s3_connect()
-        self.bucket = conn.create_bucket(bucketname)
-        return
-
-    def open_key(self, keyname):
-        if not self.is_connected:
-            conn = self.s3_connect()
-        k = Key(self.bucket)
-        k.key = keyname
-        self.keyname = keyname
-        return k
+    def parse_config(self):
+        super(S3Copy, self).parse_config()
+        self.access_key = self._get_option_value(self.config, 'S3Copy options', 'access_key')
+        self.secret_key = self._get_option_value(self.config, 'S3Copy options', 'secret_key')
+        self.bucket = self._get_option_value(self.config, 'S3Copy options', 'bucket')
 
     def process(self, file):
-        self.open_bucket(self.bucket)
-        k = self.open_key(self.file.name)
-        k.set_contents_from_filename(self.file.name)
-        return
+        self.parse_config()
+
+        conn = S3Connection(self.access_key, self.secret_key)
+        bucket = conn.create_bucket(self.bucket)
+        k = Key(bucket)
+        k.key = file.name
+        k.set_contents_from_file(file)
+
+        return file
 
 if __name__ == '__main__':
 
