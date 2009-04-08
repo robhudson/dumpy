@@ -14,7 +14,6 @@ else:
     from boto.s3.key import Key
     from boto.s3.connection import S3Connection
 
-
 # Process options:
 # dumpy --database [database name]
 parser = OptionParser()
@@ -29,19 +28,14 @@ parser.add_option("-a", "--all-databases",
 
 (options, args) = parser.parse_args()
 
-# create logger
 logger = logging.getLogger("dumper")
 logger.setLevel(logging.ERROR)
 if options.verbose:
-  logger.setLevel(logging.DEBUG)
-# create console handler and set level to debug
+    logger.setLevel(logging.DEBUG)
 ch = logging.StreamHandler()
 ch.setLevel(logging.DEBUG)
-# create formatter
 formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-# add formatter to ch
 ch.setFormatter(formatter)
-# add ch to logger
 logger.addHandler(ch)
 
 class MySQLDumpError(Exception):
@@ -187,7 +181,7 @@ class MysqlBackup(BackupBase):
             'database': self.name,
             'file': tmp_file.name,
         })
-        logger.info('%s - ' % (self.db,) + cmd) #FIXME
+        logger.info('%s - %s' % (self.db, cmd)) #FIXME
         os.system(cmd)
 
         return tmp_file
@@ -229,7 +223,7 @@ class PostgresqlBackup(BackupBase):
             'database': self.name,
             'file': tmp_file.name,
         }
-        print cmd # FIXME
+        logger.info('%s - %s' % (self.db, cmd))
         os.system(cmd)
         return tmp_file
 
@@ -253,7 +247,7 @@ class PostProcess(PostProcessBase):
             processors = [p.strip() for p in self.processors.split(',')]
 
             for processor in processors:
-                logger.info('%s - ' % (self.db,) + processor)
+                logger.info('%s - %s' % (self.db, processor))
                 file = globals()[processor](self.db).process(file)
 
 class Bzip(PostProcessBase):
@@ -272,7 +266,7 @@ class Bzip(PostProcessBase):
         self.parse_config()
 
         cmd = "%(path)s -f '%(file)s'" % ({'path': self.path, 'file': file.name})
-        logger.info('%s - ' % (self.db,) + cmd) #FIXME
+        logger.info('%s - %s' % (self.db, cmd))
         os.system(cmd)
         new_file = open('%s.bz2' % (file.name))
         file.close()
@@ -296,7 +290,7 @@ class TimestampRename(PostProcessBase):
 
         dir = os.path.dirname(file.name)
         base, ext = os.path.splitext(os.path.basename(file.name))
-        # Put DB name into renamed name
+        # @@@ Clint: Put DB name into renamed name, I dunno how i like this in here
         file_name_format = '%s/%s%s'
         if self.insert_db_name:
           file_name_format = '%s/'+self.db+'-%s%s'
@@ -366,10 +360,11 @@ class S3Copy(PostProcessBase):
 if __name__ == '__main__':
     dbs_to_dump = []
     
+    
     if options.all:
-      db = DumpyBase()
-      db.parse_config()
-      sections = db.config.sections()
+      config = ConfigParser.SafeConfigParser()
+      config.read(os.path.expanduser('~/.dumpy.cfg'))
+      sections = config.sections()
       for db in sections:
         if db.startswith('database '):
           dbname = db.replace('database ', '')
