@@ -170,15 +170,17 @@ class PostProcess(PostProcessBase):
     def parse_config(self):
         super(PostProcess, self).parse_config()
 
-        self.processors = self._get_option_value(self.config, 'database %s' % (self.db), 'postprocessing')
+        self.processors = self._get_option_value(self.config, 'database %s' % (self.db,), 'postprocessing')
 
     def process(self, file):
         self.parse_config()
-        processors = [p.strip() for p in self.processors.split(',')]
+        
+        if self.processors:
+            processors = [p.strip() for p in self.processors.split(',')]
 
-        for processor in processors:
-            print processor #FIXME
-            file = globals()[processor](self.db).process(file)
+            for processor in processors:
+                print processor #FIXME
+                file = globals()[processor](self.db).process(file)
 
 class Bzip(PostProcessBase):
     """
