@@ -1,8 +1,11 @@
+#!/usr/bin/env python
 import os
 import ConfigParser
 import datetime
 import shutil
 import tempfile
+from optparse import OptionParser
+import logging
 
 try:
     import boto
@@ -12,10 +15,16 @@ else:
     from boto.s3.key import Key
     from boto.s3.connection import S3Connection
 
+logger = logging.getLogger("dumper")
+logger.setLevel(logging.ERROR)
+ch = logging.StreamHandler()
+ch.setLevel(logging.DEBUG)
+formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+ch.setFormatter(formatter)
+logger.addHandler(ch)
 
 class MySQLDumpError(Exception):
     pass
-
 
 class DumpyBase(object):
     """
@@ -163,7 +172,7 @@ class MysqlBackup(BackupBase):
             'database': self.name,
             'file': tmp_file.name,
         })
-        print cmd #FIXME
+        logger.info('%s - %s' % (self.db, cmd)) #FIXME
         os.system(cmd)
 
         return tmp_file
@@ -205,7 +214,7 @@ class PostgresqlBackup(BackupBase):
             'database': self.name,
             'file': tmp_file.name,
         }
-        print cmd # FIXME
+        logger.info('%s - %s' % (self.db, cmd))
         os.system(cmd)
         return tmp_file
 
@@ -229,7 +238,7 @@ class PostProcess(PostProcessBase):
             processors = [p.strip() for p in self.processors.split(',')]
 
             for processor in processors:
-                print processor #FIXME
+                logger.info('%s - %s' % (self.db, processor))
                 file = globals()[processor](self.db).process(file)
 
 class Bzip(PostProcessBase):
@@ -248,7 +257,7 @@ class Bzip(PostProcessBase):
         self.parse_config()
 
         cmd = "%(path)s -f '%(file)s'" % ({'path': self.path, 'file': file.name})
-        print cmd #FIXME
+        logger.info('%s - %s' % (self.db, cmd))
         os.system(cmd)
         new_file = open('%s.bz2' % (file.name))
         file.close()
@@ -264,19 +273,25 @@ class TimestampRename(PostProcessBase):
     def parse_config(self):
         super(TimestampRename, self).parse_config()
         self.format = self._get_option_value(self.config, 'TimestampRename options', 'format')
-
+        self.insert_db_name = self._get_option_value(self.config, 'database %s' % (self.db), 'insert_db_name', 'boolean')
+        
     def process(self, file):
 
         self.parse_config()
 
         dir = os.path.dirname(file.name)
         base, ext = os.path.splitext(os.path.basename(file.name))
-        new_file_name = '%s/%s%s' % (dir, datetime.datetime.now().strftime(self.format), ext)
+        # @@@ Clint: Put DB name into renamed name, I dunno how i like this in here
+        file_name_format = '%s/%s%s'
+        if self.insert_db_name:
+          file_name_format = '%s/'+self.db+'-%s%s'
+        new_file_name = file_name_format % (dir, datetime.datetime.now().strftime(self.format), ext)
 
         shutil.copy(file.name, new_file_name)
         new_file = open(new_file_name)
         file.close()
         return new_file
+        
 
 class SystemFileCopy(PostProcessBase):
     """
@@ -338,13 +353,35 @@ class S3Copy(PostProcessBase):
         return file
 
 if __name__ == '__main__':
+    parser = OptionParser()
+    parser.add_option("-D", "--database", dest="database",
+                      help="Which database would you like to dump?", default='db1')
+    parser.add_option("-v", "--verbose",
+                      action="store_true", dest="verbose", default=False,
+                      help="Output debugging information")
+    parser.add_option("-a", "--all-databases",
+                      action="store_true", dest="all", default=False,
+                      help="Dump all databases")
+    
+    (options, args) = parser.parse_args()
+    
+    if options.verbose:
+        logger.setLevel(logging.DEBUG)
 
-    # Process options:
-    # dumpy --database [database name]
-
-    # Call DatabaseBackup first
-    file = DatabaseBackup('db1').backup()
-
-    # Then call post processors, in the given order
-    PostProcess('db1').process(file)
-
+    dbs_to_dump = []
+    
+    if options.all:
+      config = ConfigParser.SafeConfigParser()
+      config.read(os.path.expanduser('~/.dumpy.cfg'))
+      sections = config.sections()
+      for db in sections:
+        if db.startswith('database '):
+          dbname = db.replace('database ', '')
+          dbs_to_dump.append(dbname)
+    else:
+      dbs_to_dump.append(options.database)
+    
+    for db in dbs_to_dump:
+      file = DatabaseBackup(db).backup()
+      # Then call post processors, in the given order
+      PostProcess(db).process(file)
