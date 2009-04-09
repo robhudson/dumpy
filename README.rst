@@ -45,7 +45,7 @@ The following is an idea of what the configuration file, located at
 	path = /opt/local/lib/postgresql83/bin/pg_dump
 	
 	[TimestampRename options]
-	format = %Y%m%d
+	format = %%Y%%m%%d
 	
 	[Bzip options]
 	path = /usr/bin/bzip2
