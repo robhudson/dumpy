@@ -162,7 +162,7 @@ class MysqlBackup(BackupBase):
             'database': self.name,
             'file': tmp_file.name,
         })
-        logger.info('%s - %s' % (self.db, cmd)) #FIXME
+        logger.info('%s - Command: %s' % (self.db, cmd))
         os.system(cmd)
 
         return tmp_file
@@ -204,7 +204,7 @@ class PostgresqlBackup(BackupBase):
             'database': self.name,
             'file': tmp_file.name,
         }
-        logger.info('%s - %s' % (self.db, cmd))
+        logger.info('%s - Command: %s' % (self.db, cmd))
         os.system(cmd)
         return tmp_file
 
