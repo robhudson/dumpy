@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 import os
 import ConfigParser
 import datetime
@@ -14,24 +15,8 @@ else:
     from boto.s3.key import Key
     from boto.s3.connection import S3Connection
 
-# Process options:
-# dumpy --database [database name]
-parser = OptionParser()
-parser.add_option("-D", "--database", dest="database",
-                  help="Which database would you like to dump?", default='db1')
-parser.add_option("-v", "--verbose",
-                  action="store_true", dest="verbose", default=False,
-                  help="Output debugging information")
-parser.add_option("-a", "--all-databases",
-                  action="store_true", dest="all", default=False,
-                  help="Dump all databases")
-
-(options, args) = parser.parse_args()
-
 logger = logging.getLogger("dumper")
 logger.setLevel(logging.ERROR)
-if options.verbose:
-    logger.setLevel(logging.DEBUG)
 ch = logging.StreamHandler()
 ch.setLevel(logging.DEBUG)
 formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
@@ -358,8 +343,22 @@ class S3Copy(PostProcessBase):
         return file
 
 if __name__ == '__main__':
-    dbs_to_dump = []
+    parser = OptionParser()
+    parser.add_option("-D", "--database", dest="database",
+                      help="Which database would you like to dump?", default='db1')
+    parser.add_option("-v", "--verbose",
+                      action="store_true", dest="verbose", default=False,
+                      help="Output debugging information")
+    parser.add_option("-a", "--all-databases",
+                      action="store_true", dest="all", default=False,
+                      help="Dump all databases")
     
+    (options, args) = parser.parse_args()
+    
+    if options.verbose:
+        logger.setLevel(logging.DEBUG)
+
+    dbs_to_dump = []
     
     if options.all:
       config = ConfigParser.SafeConfigParser()
