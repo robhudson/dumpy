@@ -54,6 +54,7 @@ The following is an idea of what the configuration file, located at
 	access_key = access_key
 	secret_key = secret_key
 	bucket = bucket
+	prefix = path/to/directory
 
 
 Status

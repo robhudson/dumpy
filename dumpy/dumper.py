@@ -328,6 +328,7 @@ class S3Copy(PostProcessBase):
         self.access_key = self._get_option_value(self.config, 'S3Copy options', 'access_key')
         self.secret_key = self._get_option_value(self.config, 'S3Copy options', 'secret_key')
         self.bucket = self._get_option_value(self.config, 'S3Copy options', 'bucket')
+        self.prefix = self._get_option_value(self.config, 'S3Copy options', 'prefix')
 
     def process(self, file):
         if boto is None:
@@ -338,10 +339,18 @@ class S3Copy(PostProcessBase):
         conn = S3Connection(self.access_key, self.secret_key)
         bucket = conn.create_bucket(self.bucket)
         k = Key(bucket)
-        k.key = file.name
+        if self.prefix:
+            keyname = '%s%s%s' % (
+                self.prefix,
+                self.prefix.endswith('/') and '' or '/',
+                os.path.basename(file.name)
+            )
+        else:
+            keyname = os.path.basename(file.name)
+        k.key = keyname
         k.set_contents_from_file(file)
 
-        logger.info('%s - %s - Copying to S3 with key name: %s' % (self.db, self.__class__.__name__, file.name))
+        logger.info('%s - %s - Copying to S3 with key name: %s' % (self.db, self.__class__.__name__, keyname))
 
         return file
 
