@@ -80,19 +80,25 @@ class DumpyBase(object):
 class BackupBase(DumpyBase):
     """
     Base class for database backups.
+
+    Any subclass of BackupBase needs to implement the backup() method and
+    return a file-like object.
     """
-    
     def __init__(self, db):
         self.db = db
-    
+
     def backup(self):
         raise NotImplementedError
 
 class PostProcessBase(DumpyBase):
     """
     Base class for post processing routines.
+
+    Any subclass of PostProcessBase needs to implement the process(file)
+    method, taking in a file-like object and returning a file-like object.  The
+    process(file) method should return the file object passed in if unchanged.
     """
-    def process(self):
+    def process(self, file):
         raise NotImplementedError
 
 class DatabaseBackup(BackupBase):
@@ -163,19 +169,19 @@ class MysqlBackup(BackupBase):
         return tmp_file
 
 class PostgresqlBackup(BackupBase):
-    
+
     def parse_config(self):
         super(PostgresqlBackup, self).parse_config()
-        
+
         section = 'database %s' % self.db
         self.name = self._get_option_value(self.config, section, 'name')
         self.user = self._get_option_value(self.config, section, 'user')
         self.host = self._get_option_value(self.config, section, 'host')
         self.port = self._get_option_value(self.config, section, 'port', 'int')
-        
+
         self.binary = self._get_option_value(self.config, 'pg_dump options', 'path')
         self.flags = self._get_option_value(self.config, 'pg_dump options', 'flags')
-    
+
     def get_flags(self):
         # @@@ ugh. i don't like this.
         if self.flags is None:
@@ -189,7 +195,7 @@ class PostgresqlBackup(BackupBase):
         if self.port:
             flags += ' -p %d' % self.port
         return flags
-    
+
     def backup(self):
         self.parse_config()
         tmp_file = tempfile.NamedTemporaryFile()
@@ -218,7 +224,7 @@ class PostProcess(PostProcessBase):
 
     def process(self, file):
         self.parse_config()
-        
+
         if self.processors:
             processors = [p.strip() for p in self.processors.split(',')]
 
