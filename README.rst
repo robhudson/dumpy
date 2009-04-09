@@ -69,9 +69,32 @@ I've written my last database dump and backup script that I want to.  My hope
 is that this will be a general and feature rich backup script that's easily
 extendable and will work across multiple databases and backup schemes.
 
-Future plans
+Installation
 ============
 
-* Support some file based backups with auto rotation.
-* Finish S3 Backup and flesh out S3 options.
-* Lots more to think of.
+Download dumpy and put the dumpy module on your Python path.  A way to quickly
+test dumpy might be::
+
+	$ git clone git://github.com/robhudson/dumpy.git
+	$ cd dumpy
+	$ export PYTHONPATH=$PYTHONPATH:`pwd`
+
+Create a config file like the one above in your home directory named `.dumpy.cfg`.
+
+To run the `dumper.py` command::
+
+	$ python /path/to/dumper.py
+
+The `dumper.py` command takes the following options:
+
+    -h, --help            Display help information
+    -D DATABASE, --database=DATABASE
+                          Dump only the specified database with matching config
+                          name
+    -v, --verbose         Display logging output
+    -a, --all-databases   Dump all databases in the configuration file
+
+Setting up a cron job
+=====================
+
+TODO
