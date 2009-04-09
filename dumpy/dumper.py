@@ -303,6 +303,10 @@ class SystemFileCopy(PostProcessBase):
 
         shutil.copy(file.name, new_file_name)
         new_file = open(new_file_name)
+        # TODO:
+        # This should probably not return the new file but return the original.
+        # In that way, any copy post processing results in a dead end but the
+        # original file can still be used in more post processing.
         file.close()
         return new_file
 
