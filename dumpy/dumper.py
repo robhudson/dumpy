@@ -8,14 +8,20 @@ import sys
 from dumpy import base
 
 parser = optparse.OptionParser()
-parser.add_option("-D", "--database", dest="database",
-                  help="Which database would you like to dump?", default='db1')
+parser.add_option("-D", "--database",
+                  dest="database",
+                  default='db1',
+                  help="Dump only the specified database with matching config name")
 parser.add_option("-v", "--verbose",
-                  action="store_true", dest="verbose", default=False,
-                  help="Output debugging information")
+                  action="store_true",
+                  dest="verbose",
+                  default=False,
+                  help="Display logging output")
 parser.add_option("-a", "--all-databases",
-                  action="store_true", dest="all", default=False,
-                  help="Dump all databases")
+                  action="store_true",
+                  dest="all",
+                  default=False,
+                  help="Dump all databases in the configuration file")
 
 (options, args) = parser.parse_args()
 
