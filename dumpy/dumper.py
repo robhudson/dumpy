@@ -228,7 +228,6 @@ class PostProcess(PostProcessBase):
             processors = [p.strip() for p in self.processors.split(',')]
 
             for processor in processors:
-                logger.info('%s - %s' % (self.db, processor))
                 file = globals()[processor](self.db).process(file)
 
 class Bzip(PostProcessBase):
@@ -247,7 +246,7 @@ class Bzip(PostProcessBase):
         self.parse_config()
 
         cmd = "%(path)s -f '%(file)s'" % ({'path': self.path, 'file': file.name})
-        logger.info('%s - %s' % (self.db, cmd))
+        logger.info('%s - %s - Command: %s' % (self.db, self.__class__.__name__, cmd))
         os.system(cmd)
         new_file = open('%s.bz2' % (file.name))
         file.close()
@@ -264,7 +263,7 @@ class TimestampRename(PostProcessBase):
         super(TimestampRename, self).parse_config()
         self.format = self._get_option_value(self.config, 'TimestampRename options', 'format')
         self.insert_db_name = self._get_option_value(self.config, 'database %s' % (self.db), 'insert_db_name', 'boolean')
-        
+
     def process(self, file):
 
         self.parse_config()
@@ -278,10 +277,11 @@ class TimestampRename(PostProcessBase):
         new_file_name = file_name_format % (dir, datetime.datetime.now().strftime(self.format), ext)
 
         shutil.copy(file.name, new_file_name)
+        logger.info('%s - %s - Copying %s to %s' % (self.db, self.__class__.__name__, file.name, new_file_name))
         new_file = open(new_file_name)
         file.close()
         return new_file
-        
+
 
 class SystemFileCopy(PostProcessBase):
     """
@@ -307,6 +307,7 @@ class SystemFileCopy(PostProcessBase):
         new_file_name = '%s/%s%s' % (self.dir, base, ext)
 
         shutil.copy(file.name, new_file_name)
+        logger.info('%s - %s - Copying %s to %s' % (self.db, self.__class__.__name__, file.name, new_file_name))
         new_file = open(new_file_name)
         # TODO:
         # This should probably not return the new file but return the original.
@@ -339,6 +340,8 @@ class S3Copy(PostProcessBase):
         k = Key(bucket)
         k.key = file.name
         k.set_contents_from_file(file)
+
+        logger.info('%s - %s - Copying to S3 with key name: %s' % (self.db, self.__class__.__name__, file.name))
 
         return file
 
