@@ -7,17 +7,16 @@ import dumpy
 
 logger = logging.getLogger("dumper")
 
-class TimestampRename(dumpy.base.PostProcessBase):
+class PrependDatabaseName(dumpy.base.PostProcessBase):
     """
-    A post procesor that renames the file using timestamp format.
+    A post procesor that renames the file by prepending the database name to
+    the existing file name.
     """
     def __init__(self, db):
         self.db = db
 
     def parse_config(self):
-        super(TimestampRename, self).parse_config()
-        self.format = self._get_option_value(self.config, 'TimestampRename options', 'format')
-        self.insert_db_name = self._get_option_value(self.config, 'database %s' % (self.db), 'insert_db_name', 'boolean')
+        super(PrependDatabaseName, self).parse_config()
 
     def process(self, file):
 
@@ -26,11 +25,12 @@ class TimestampRename(dumpy.base.PostProcessBase):
         dir = os.path.dirname(file.name)
         base, ext = os.path.splitext(os.path.basename(file.name))
 
-        new_file_name = '%s/%s%s' % (dir, datetime.datetime.now().strftime(self.format), ext)
+        new_file_name = '%s/%s-%s%s' % (dir, self.db, base, ext)
 
         shutil.copy(file.name, new_file_name)
         logger.info('%s - %s - Copying %s to %s' % (self.db, self.__class__.__name__, file.name, new_file_name))
         new_file = open(new_file_name)
         file.close()
+
         return new_file
 

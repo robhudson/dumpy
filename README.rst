@@ -28,7 +28,7 @@ The following is an idea of what the configuration file, located at
 	name = dbname1
 	user = db1
 	password = db1
-	postprocessing = TimestampRename, Bzip, SystemFileCopy, S3Copy
+	postprocessing = TimestampRename, PrependDatabaseName, Bzip, SystemFileCopy, S3Copy
 	
 	[database db2]
 	type = postgresql

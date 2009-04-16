@@ -126,9 +126,10 @@ class PostProcess(PostProcessBase):
         self.db = db
         self.builtin_processors = {
             'Bzip': 'dumpy.postprocessor.bzip.Bzip',
-            'TimestampRename': 'dumpy.postprocessor.timestamp.TimestampRename',
             'FileSystemCopy': 'dumpy.postprocessor.fscopy.FileSystemCopy',
+            'PrependDatabaseName': 'dumpy.postprocessor.dbname.PrependDatabaseName',
             'S3Copy': 'dumpy.postprocessor.s3copy.S3Copy',
+            'TimestampRename': 'dumpy.postprocessor.timestamp.TimestampRename',
         }
 
     def parse_config(self):
