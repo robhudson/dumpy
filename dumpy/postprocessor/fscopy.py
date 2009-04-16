@@ -23,7 +23,6 @@ class FileSystemCopy(dumpy.base.PostProcessBase):
     def process(self, file):
         self.parse_config()
 
-        dir = os.path.dirname(file.name)
         base, ext = os.path.splitext(os.path.basename(file.name))
         if self.dir.endswith('/'):
             self.dir = self.dir[0:-1]
@@ -31,11 +30,6 @@ class FileSystemCopy(dumpy.base.PostProcessBase):
 
         shutil.copy(file.name, new_file_name)
         logger.info('%s - %s - Copying %s to %s' % (self.db, self.__class__.__name__, file.name, new_file_name))
-        new_file = open(new_file_name)
-        # TODO:
-        # This should probably not return the new file but return the original.
-        # In that way, any copy post processing results in a dead end but the
-        # original file can still be used in more post processing.
-        file.close()
-        return new_file
+
+        return file
 
