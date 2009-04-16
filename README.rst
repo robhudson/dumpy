@@ -28,14 +28,14 @@ The following is an idea of what the configuration file, located at
 	name = dbname1
 	user = db1
 	password = db1
-	postprocessing = TimestampRename, PrependDatabaseName, Bzip, SystemFileCopy, S3Copy
+	postprocessing = TimestampRename, PrependDatabaseName, Bzip, FileSystemCopy, S3Copy
 	
 	[database db2]
 	type = postgresql
 	name = dbname2
 	user = db2
 	password = db2
-	postprocessing = TimestampRename, Bzip, SystemFileCopy
+	postprocessing = TimestampRename, PrependDatabaseName, Bzip, FileSystemCopy, RotateFiles
 	
 	[mysqldump options]
 	path = /opt/local/lib/mysql5/bin/mysqldump
@@ -55,6 +55,13 @@ The following is an idea of what the configuration file, located at
 	secret_key = secret_key
 	bucket = bucket
 	prefix = path/to/directory
+	
+	[FileSystemCopy options]
+	directory = /path/to/directory/
+	
+	[RotateFiles options]
+	directory = /path/to/directory/
+	number = 5
 
 
 Status

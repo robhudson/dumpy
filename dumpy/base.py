@@ -128,6 +128,7 @@ class PostProcess(PostProcessBase):
             'Bzip': 'dumpy.postprocessor.bzip.Bzip',
             'FileSystemCopy': 'dumpy.postprocessor.fscopy.FileSystemCopy',
             'PrependDatabaseName': 'dumpy.postprocessor.dbname.PrependDatabaseName',
+            'RotateFiles': 'dumpy.postprocessor.rotating.RotateFiles',
             'S3Copy': 'dumpy.postprocessor.s3copy.S3Copy',
             'TimestampRename': 'dumpy.postprocessor.timestamp.TimestampRename',
         }
