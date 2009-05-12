@@ -26,6 +26,9 @@ class S3Copy(dumpy.base.PostProcessBase):
         self.secret_key = self._get_option_value(self.config, 'S3Copy options', 'secret_key')
         self.bucket = self._get_option_value(self.config, 'S3Copy options', 'bucket')
         self.prefix = self._get_option_value(self.config, 'S3Copy options', 'prefix')
+        # Make sure prefix ends with a single forward slash
+        if not self.prefix.endswith('/'):
+            self.prefix += '/'
 
     def process(self, file):
         if boto is None:
@@ -37,9 +40,8 @@ class S3Copy(dumpy.base.PostProcessBase):
         bucket = conn.create_bucket(self.bucket)
         k = Key(bucket)
         if self.prefix:
-            keyname = '%s%s%s' % (
+            keyname = '%s%s' % (
                 self.prefix,
-                self.prefix.endswith('/') and '' or '/',
                 os.path.basename(file.name)
             )
         else:
