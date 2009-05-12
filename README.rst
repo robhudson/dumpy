@@ -21,7 +21,7 @@ Example configuration file
 ==========================
 
 The following is an idea of what the configuration file, located at
-`~/.dumpy.conf` might look like.  This is very likely to change::
+`~/.dumpy.cfg` might look like.  This is very likely to change::
 
 	[database db1]
 	type = mysql
@@ -67,7 +67,8 @@ The following is an idea of what the configuration file, located at
 Status
 ======
 
-Very alpha.  Looking for other coders to help and flesh out ideas.
+Beta.  This is working and being used as a backup on a few systems but likely
+has bugs.
 
 Motivation
 ==========
